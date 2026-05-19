@@ -1,81 +1,80 @@
 # Tracker — RASO IMM Mission Control
 
-Interactive radar-tracker / cockpit-HUD visualisation. Built as a single React app
-that replays IMM (Interacting Multiple Model) tracking data across multiple
-segments and renders a stylised F-35-style HUD scene.
+A real-time visualisation of an Interacting Multiple Model (IMM) radar
+tracker, presented as an F-35-style cockpit HUD. Recorded tracking data
+across nine trajectories — birds, cars, three Formula 1 laps (Monaco,
+Silverstone, Abu Dhabi), an airplane, a missile, and a pedestrian — is
+replayed step by step against the ground truth, with live error metrics,
+model-probability evolution, and a fully procedural cockpit scene.
 
 **Live:** https://widthmissmatch.github.io/Tracker/
 
-## What's in this repo
+![Dashboard screenshot](docs/screenshot.png)
 
-The source artefact was a single self-contained 4 MB HTML file
-(`RASO Mission Control v11.html`) — a "bundler" format where every asset
-is base64-encoded and gzipped into inline `<script type="__bundler/*">` blocks.
-This repo unpacks that bundle into a normal static site:
+## What it shows
 
-```
-index.html                   clean entry point (~34 KB)
-assets/
-  data/                      raso.json (5.7 MB tracker dataset)
-  fonts/                     Inter + JetBrains Mono woff2 subsets
-  js/                        React + ReactDOM + Babel-standalone + 4 app JSX bundles
-RASO Mission Control v11.html   original single-file source (kept for reference)
-unpack.py                    extractor — regenerates index.html + assets/ from the original
-push.py                      one-shot publisher — creates the repo, pushes, enables Pages
-```
+The tracker fuses a bank of five motion models (B0–B4 — constant-turn
+CTRA, Singer acceleration, bike/coordinated-turn, and two variants) and
+estimates a target's position, velocity, and class from noisy radar
+returns. The console exposes everything happening inside that loop:
 
-The unpacked output is byte-equivalent at render time to the original
-bundled HTML — same React tree, same data, same fonts — just served as
-separate files so it works on GitHub Pages and is easier to maintain.
+- **Ground truth, estimate, and one-step prediction**, all in world
+  coordinates, updated every cycle.
+- **Tracking error** as live L2 norm, with rolling MAE, RMSE, a 95th
+  percentile reference line, and a sparkline of the most recent window.
+- **Mode probability** as a stacked area chart over time — you can watch
+  the filter swing weight between CTRA, Singer, and bike models as the
+  target manoeuvres.
+- **Active IMM bank** highlighted across five model slots.
+- **RF class** and **RF confidence** from the classification head, with
+  the readout colour-coded per class.
 
-## Running locally
+## Engineering highlights
 
-No build step. Any static HTTP server works:
+**Procedural cockpit scene, no game engine.** The 3D view is a custom
+nadir projector drawn into a single 2D canvas — atmospheric sky
+gradient, three parallaxed multi-octave mountain ridges, a ground plane
+with perspective fall-off, and the tracked target rendered far below.
+Over the top, a full HUD chrome is drawn frame by frame: pitch ladder,
+bank/roll arc with tick pointer, heading tape with N/E/S/W cardinal
+labels, altitude and airspeed tapes with floating readouts, flight path
+marker, target lock box, prediction circle, and lock-state text
+(tracking / locked / firing) gated by RF confidence.
 
-```
-python -m http.server 8000
-```
+**Camera that flies the trajectory.** Heading is derived from the
+target's velocity vector and exponentially smoothed; bank angle is
+auto-derived from heading rate, so the world banks into turns the way a
+real aircraft would. The world is yaw-rotated so the velocity vector
+always points "up" on screen, giving the operator a first-person feel
+without ever leaving 2D.
 
-Then open `http://127.0.0.1:8000/`. Opening `index.html` directly from
-the file system also works in most browsers, but a real HTTP origin
-avoids `file://` quirks with the JSON fetch.
+**Live tweakable.** A `useTweaks` hook exposes fifteen runtime knobs
+(altitude, FOV, horizon fraction, trail length, replay speed, lock mode,
+plus toggles for terrain, mountains, clouds, HUD chrome, canopy, grid,
+prediction marker) so the scene can be reshaped without rebuilding.
 
-## Regenerating from the source bundle
+**Hand-drawn class iconography.** Every class — bird, car, F1, airplane,
+missile, pedestrian, and the rest — has a custom monochrome SVG
+silhouette that follows the active colour, used both in the trajectory
+list and in the segment timeline at the bottom.
 
-If a newer `RASO Mission Control v*.html` arrives, drop it into the
-project root (matching the filename in `unpack.py`'s `SRC` constant) and
-run:
+**Honest metrics.** The error panel computes MAE and RMSE from the same
+rolling window the chart displays, the percentile line is recomputed
+each frame, and the delta indicator shows signed change since the
+previous cycle — no smoothing tricks that hide spikes.
 
-```
-python unpack.py
-```
+## Data
 
-That wipes `assets/` and rewrites `index.html` from the new bundle.
+A 5.7 MB JSON dataset of 16,126 timestamps across the nine trajectories.
+Each sample carries the full IMM filter state — cycle index, segment id,
+ground-truth position, estimate, velocity, one-step prediction, radar
+class, active bank, confidence, and the three-way model probability —
+all keyed to short field names so the file stays compact.
 
-## Deploying
+## Stack
 
-`push.py` reads a GitHub personal access token from a local file named
-`.github_token` (gitignored — never committed), then:
-
-1. Authenticates to GitHub as the token's owner.
-2. Creates a public repo named `Tracker` under that account if it doesn't
-   already exist.
-3. Initialises git, commits everything as the configured author, pushes
-   `main`.
-4. Strips the token from `.git/config` so it isn't left behind.
-5. Enables GitHub Pages on `main` / root.
-
-Token scopes needed (classic PAT): `repo`. Then:
-
-```
-python push.py
-```
-
-## Notes
-
-- The app logs a handful of `TypeError` messages during the first render
-  pass (both in the original bundled HTML and in this unpacked version).
-  They're React's internal first-render-then-recover behaviour — the
-  visual output is unaffected.
-- All assets are local; the page makes zero outbound network requests at
-  runtime.
+React 18, vanilla canvas 2D, hand-rolled SVG. No build pipeline, no
+bundler dependency in production, no third-party charting library. Inter
+and JetBrains Mono are served as local woff2 subsets — the page makes
+zero outbound network requests at runtime, so it works fully offline and
+on slow links once cached.

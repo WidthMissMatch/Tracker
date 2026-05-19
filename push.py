@@ -64,7 +64,7 @@ def gh_request(method: str, path: str, token: str, body: dict | None = None) -> 
             return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as e:
         raise RuntimeError(
-            f"{method} {path} → HTTP {e.code}: {e.read().decode('utf-8', 'replace')}"
+            f"{method} {path} HTTP {e.code}: {e.read().decode('utf-8', 'replace')}"
         ) from None
 
 
@@ -160,12 +160,12 @@ def enable_pages(token: str, login: str):
     body = {"source": {"branch": BRANCH, "path": "/"}, "build_type": "legacy"}
     try:
         info = gh_request("POST", f"/repos/{login}/{REPO_NAME}/pages", token, body)
-        print(f"[push] pages enabled → {info.get('html_url', '(url pending)')}")
+        print(f"[push] pages enabled at {info.get('html_url', '(url pending)')}")
     except RuntimeError as e:
         msg = str(e)
         if "HTTP 409" in msg or "already exists" in msg.lower():
             info = gh_request("GET", f"/repos/{login}/{REPO_NAME}/pages", token)
-            print(f"[push] pages already enabled → {info.get('html_url', '(url unknown)')}")
+            print(f"[push] pages already enabled at {info.get('html_url', '(url unknown)')}")
         else:
             print(f"[push] pages enable failed: {msg}")
 
