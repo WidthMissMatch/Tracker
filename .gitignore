@@ -1,0 +1,9 @@
+# Secrets — never commit these
+.github_token
+*.token
+.env
+.env.*
+
+# Python runtime
+__pycache__/
+*.pyc
