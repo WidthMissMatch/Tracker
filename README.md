@@ -96,8 +96,9 @@ npm run preview   # serve dist/
 ## Deployment
 
 `.github/workflows/deploy.yml` builds and publishes to GitHub Pages on every
-push to `main`. In the repository's **Settings → Pages**, set **Source** to
-**GitHub Actions** (one-time).
+push to `main`. Recommended one-time change (repo admin): **Settings → Pages
+→ Source → GitHub Actions**. Until then the workflow waits for GitHub's
+branch-based build and deploys after it, so the built site still ends up live.
 
 ## Stack
 
