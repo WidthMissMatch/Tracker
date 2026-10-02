@@ -8,7 +8,7 @@ error metrics, mode probabilities and the RF classifier's output.
 
 **Live:** https://widthmissmatch.github.io/Tracker/
 
-![Console screenshot](docs/screenshot.png)
+![Console screenshot](docs/screenshot.jpg)
 
 > **Replay, not a live filter.** The tracker ran offline; this page plays
 > back its stored output (`data/raso.json`). Nothing is estimated in the
