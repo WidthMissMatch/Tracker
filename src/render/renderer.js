@@ -1,5 +1,7 @@
 // Draws one frame of the tracking scene. Pure function of its inputs apart
 // from `camera`, which carries the smoothed follow position between frames.
+// Returns { settled }: false while the camera is still gliding, so callers know
+// a paused scene needs more frames before it can stop redrawing.
 import { lockState, rowAt, speedOf } from '../data/metrics.js';
 import { pad } from '../data/format.js';
 import { make3DProjector } from './projection.js';
@@ -12,6 +14,7 @@ import { ESTIMATE, PREDICTION, TRUTH } from './palette.js';
 const FUTURE_COUNT = 6;
 const FOLLOW_SMOOTHING = 0.18;
 const TARGET_BOX = 96;
+const NARROW = 560; // px — below this the HUD footer drops its centre text
 
 export function createCamera() {
   return { pos: null };
@@ -30,7 +33,7 @@ export function createCamera() {
  */
 export function renderFrame(ctx, { width: w, height: h, segment, rows, step, settings, camera, now }) {
   drawBackground(ctx, w, h);
-  if (!segment || !rows?.length) return;
+  if (!segment || !rows?.length) return { settled: true };
 
   const live = rowAt(rows, step);
   const idx = Math.min(rows.length - 1, Math.floor(step));
@@ -45,8 +48,16 @@ export function renderFrame(ctx, { width: w, height: h, segment, rows, step, set
   // Camera: follow the target (smoothed) or sit on the box centre.
   const centre = [(xmn + xmx) / 2, (ymn + ymx) / 2, (box[2] + box[5]) / 2];
   const target = settings.follow ? live.g : centre;
-  if (!camera.pos || !settings.follow) camera.pos = [...target];
-  else for (let i = 0; i < 3; i++) camera.pos[i] += (target[i] - camera.pos[i]) * FOLLOW_SMOOTHING;
+  let settled = true;
+  if (!camera.pos || !settings.follow) {
+    camera.pos = [...target];
+  } else {
+    for (let i = 0; i < 3; i++) {
+      const d = target[i] - camera.pos[i];
+      camera.pos[i] += d * FOLLOW_SMOOTHING;
+      if (Math.abs(d) > span * 1e-4) settled = false;
+    }
+  }
 
   const scale = ((Math.min(w, h) * 0.55) / span) * settings.zoom;
   const project = make3DProjector({
@@ -127,8 +138,9 @@ export function renderFrame(ctx, { width: w, height: h, segment, rows, step, set
     drawLockBanner(ctx, ex, ey - TARGET_BOX / 2 - 22, state, now);
     drawFooter(ctx, w, h, {
       left: state === 'tracking' ? 'TRACKING' : 'LOCKED',
-      center: `SEG ${pad(segment.id)} · ${segment.label.toUpperCase()} · STEP ${idx + 1}/${rows.length}`,
+      center: w < NARROW ? '' : `SEG ${pad(segment.id)} · ${segment.label.toUpperCase()} · STEP ${idx + 1}/${rows.length}`,
       right: `RF ${Math.round(live.cf)}%   B${live.ii}`,
     });
   }
+  return { settled };
 }

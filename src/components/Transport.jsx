@@ -1,9 +1,24 @@
+import { useEffect, useRef } from 'react';
 import { classColor } from '../data/classes.js';
 import { fmt, pad } from '../data/format.js';
 import { NextIcon, PauseIcon, PlayIcon, PrevIcon, RestartIcon } from './icons/UiIcons.jsx';
 
 function Timeline({ segments, activeIdx, progress, onSelect, onSeek }) {
   const total = segments.reduce((s, x) => s + x.n, 0);
+  const trackRef = useRef(null);
+
+  // When the timeline scrolls sideways (phones), keep the active segment in
+  // view. Sets scrollLeft directly: scrollIntoView could also scroll the page
+  // hosting an iframe.
+  useEffect(() => {
+    const track = trackRef.current;
+    const chip = track?.children[activeIdx];
+    if (!chip || track.scrollWidth <= track.clientWidth) return;
+    const left = chip.offsetLeft - track.offsetLeft;
+    if (left < track.scrollLeft || left + chip.offsetWidth > track.scrollLeft + track.clientWidth) {
+      track.scrollTo({ left: left - 16, behavior: 'smooth' });
+    }
+  }, [activeIdx]);
 
   const handleClick = (i, e) => {
     if (i !== activeIdx) {
@@ -15,7 +30,7 @@ function Timeline({ segments, activeIdx, progress, onSelect, onSeek }) {
   };
 
   return (
-    <div className="timeline" role="group" aria-label="Segments">
+    <div className="timeline" role="group" aria-label="Segments" ref={trackRef}>
       {segments.map((s, i) => {
         const color = classColor(s.label);
         const active = i === activeIdx;

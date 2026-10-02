@@ -2,29 +2,35 @@ import { useRef, useState } from 'react';
 import { Inspector } from './components/Inspector.jsx';
 import { SettingsPanel } from './components/SettingsPanel.jsx';
 import { Stage } from './components/Stage.jsx';
+import { StatusScreen } from './components/StatusScreen.jsx';
 import { TopBar } from './components/TopBar.jsx';
 import { TrajectoryList } from './components/TrajectoryList.jsx';
 import { Transport } from './components/Transport.jsx';
+import { DEFAULT_SEGMENT, OPTIONS } from './config.js';
 import { useDataset } from './data/useDataset.js';
 import { useKeyboardShortcuts } from './state/shortcuts.js';
 import { usePlayback } from './state/usePlayback.js';
 import { DEFAULT_SETTINGS, useSettings } from './state/useSettings.js';
+import { useVisibility } from './state/useVisibility.js';
 
-const INITIAL_SEGMENT = 3; // F1 — Monaco: the most visually interesting lap
+const showPanels = OPTIONS.panels !== false;
 
 export default function App() {
   const [settings, set, resetSettings] = useSettings();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const fpsRef = useRef(0);
+  const active = useVisibility();
 
-  const [segIdx, setSegIdx] = useState(INITIAL_SEGMENT);
-  const { manifest, rows, error } = useDataset(segIdx);
+  const [segIdx, setSegIdx] = useState(Math.max(0, Math.floor(OPTIONS.segment ?? DEFAULT_SEGMENT)));
+  const { manifest, manifestError, rows, segmentError, retry } = useDataset(segIdx);
   const playback = usePlayback({
     segIdx,
     setSegIdx,
     segmentCount: manifest?.segments.length ?? 0,
     rowCount: rows?.length ?? 0,
     speed: settings.speed,
+    active,
+    autoplay: OPTIONS.autoplay !== false,
   });
 
   const zoomBy = (k) => set('zoom', (z) => z * k);
@@ -52,21 +58,22 @@ export default function App() {
     (n) => manifest && n <= manifest.segments.length && playback.selectSegment(n - 1),
   );
 
-  if (error) {
+  if (manifestError) {
     return (
-      <div className="fullscreen-msg error">
-        <div>Couldn't load the tracker data.</div>
-        <code>{String(error.message || error)}</code>
-      </div>
+      <StatusScreen
+        error
+        title="Couldn't load the tracker data."
+        detail={String(manifestError.message || manifestError)}
+        action={{ label: 'Try again', onClick: retry }}
+      />
     );
   }
-  if (!manifest) {
-    return (
-      <div className="fullscreen-msg">
-        <div className="spinner" />
-        <div>Loading IMM trace…</div>
-      </div>
-    );
+  if (!manifest) return <StatusScreen title="Loading IMM trace…" />;
+
+  // A ?seg= past the end falls back to the default rather than crashing.
+  if (segIdx >= manifest.segments.length) {
+    setSegIdx(Math.min(DEFAULT_SEGMENT, manifest.segments.length - 1));
+    return null;
   }
 
   const segment = manifest.segments[segIdx];
@@ -75,7 +82,7 @@ export default function App() {
   const progress = rows ? step / Math.max(1, rows.length - 1) : 0;
 
   return (
-    <div className="app">
+    <div className={`app ${showPanels ? '' : 'no-panels'} ${OPTIONS.framed ? 'framed' : ''}`}>
       <TopBar
         row={row}
         step={step}
@@ -83,25 +90,32 @@ export default function App() {
         rfLabels={manifest.rfLabels}
         paused={playback.paused}
         fpsRef={fpsRef}
+        showRepoLink={!OPTIONS.framed}
         onOpenSettings={() => setSettingsOpen(true)}
       />
-      <TrajectoryList
-        segments={manifest.segments}
-        totalRows={manifest.totalRows}
-        activeIdx={segIdx}
-        onSelect={playback.selectSegment}
-      />
+      {showPanels && (
+        <TrajectoryList
+          segments={manifest.segments}
+          totalRows={manifest.totalRows}
+          activeIdx={segIdx}
+          onSelect={playback.selectSegment}
+        />
+      )}
       <Stage
         segment={segment}
         rows={rows}
+        error={segmentError}
+        onRetry={retry}
         stepRef={playback.stepRef}
         settings={settings}
+        paused={playback.paused}
+        active={active}
         fpsRef={fpsRef}
         onZoom={zoomBy}
         onZoomReset={() => set('zoom', DEFAULT_SETTINGS.zoom)}
         onToggleFollow={() => set('follow', (f) => !f)}
       />
-      <Inspector rows={rows} step={step} segment={segment} manifest={manifest} />
+      {showPanels && <Inspector rows={rows} step={step} segment={segment} manifest={manifest} />}
       <Transport
         segments={manifest.segments}
         activeIdx={segIdx}

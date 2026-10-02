@@ -1,9 +1,11 @@
+import { memo } from 'react';
 import { classColor } from '../data/classes.js';
 import { fmtInt, pad } from '../data/format.js';
 import { Sparkline } from './charts/Sparkline.jsx';
 import { ClassIcon } from './icons/ClassIcon.jsx';
 
-export function TrajectoryList({ segments, totalRows, activeIdx, onSelect }) {
+// Memoised: its props only change on segment switches, not every playback step.
+export const TrajectoryList = memo(function TrajectoryList({ segments, totalRows, activeIdx, onSelect }) {
   return (
     <nav className="sidebar" aria-label="Trajectories">
       <div className="panel-head">
@@ -28,7 +30,7 @@ export function TrajectoryList({ segments, totalRows, activeIdx, onSelect }) {
                 <span className="seg-meta">
                   <span className="name">{seg.label}</span>
                   <span className="sub">
-                    SEG {pad(seg.id)} · MAE {seg.stats.mae.toFixed(2)}
+                    MAE {seg.stats.mae.toFixed(2)} · SEG {pad(seg.id)}
                   </span>
                 </span>
                 <Sparkline values={seg.errSpark} color={color} />
@@ -39,4 +41,4 @@ export function TrajectoryList({ segments, totalRows, activeIdx, onSelect }) {
       </ul>
     </nav>
   );
-}
+});

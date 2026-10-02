@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
+import { REPO_URL } from '../config.js';
 import { classColor } from '../data/classes.js';
 import { pad } from '../data/format.js';
 import { GithubIcon, SettingsIcon } from './icons/UiIcons.jsx';
-
-const REPO_URL = 'https://github.com/WidthMissMatch/Tracker';
 
 // Polls the renderer's fps counter without re-rendering the whole app.
 function useFps(fpsRef) {
@@ -24,7 +23,7 @@ function Stat({ label, children, style }) {
   );
 }
 
-export function TopBar({ row, step, segment, rfLabels, paused, fpsRef, onOpenSettings }) {
+export function TopBar({ row, step, segment, rfLabels, paused, fpsRef, showRepoLink, onOpenSettings }) {
   const fps = useFps(fpsRef);
   const rfClass = row ? rfLabels[row.rc] : '—';
 
@@ -51,16 +50,19 @@ export function TopBar({ row, step, segment, rfLabels, paused, fpsRef, onOpenSet
         <Stat label="RF class" style={{ color: classColor(rfClass) }}>{rfClass}</Stat>
         <Stat label="RF conf">{row ? `${Math.round(row.cf)}%` : '—'}</Stat>
         <Stat label="IMM bank" style={{ color: 'var(--violet)' }}>{row ? `B${row.ii}` : '—'}</Stat>
-        <Stat label="Render">{fps} fps</Stat>
+        <Stat label="Render">{fps ? `${fps} fps` : 'idle'}</Stat>
       </div>
 
       <div className="tb-actions">
         <button type="button" className="icon-btn" onClick={onOpenSettings} title="Settings (S)" aria-label="Open settings">
           <SettingsIcon />
         </button>
-        <a className="icon-btn" href={REPO_URL} target="_blank" rel="noreferrer" title="Source on GitHub" aria-label="Source on GitHub">
-          <GithubIcon />
-        </a>
+        {/* Hidden when embedded: a sandbox without allow-popups would swallow the click. */}
+        {showRepoLink && (
+          <a className="icon-btn" href={REPO_URL} target="_blank" rel="noreferrer" title="Source on GitHub" aria-label="Source on GitHub">
+            <GithubIcon />
+          </a>
+        )}
       </div>
     </header>
   );

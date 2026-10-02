@@ -9,8 +9,8 @@
   --line-2: #3a465e;
   --ink-0: #e8edf5;
   --ink-1: #b6c1d4;
-  --ink-2: #8591a6;
-  --ink-3: #5c6884;
+  --ink-2: #8f9bb0;
+  --ink-3: #74819c; /* ≥ 4.5:1 on --bg-1 for the small labels */
 
   /* Series colours — keep in sync with src/render/palette.js */
   --truth: #ffae3d;
@@ -37,9 +37,11 @@ html, body, #root {
   color: var(--ink-1);
   font-family: var(--sans);
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
-button { font: inherit; color: inherit; }
+button { font: inherit; color: inherit; touch-action: manipulation; }
 h2, h3 { margin: 0; font: inherit; }
 ul { margin: 0; padding: 0; list-style: none; }
 
@@ -74,20 +76,40 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.fullscreen-msg {
+.status-screen {
   height: 100%;
+  min-height: 240px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 14px;
+  padding: 24px;
+  text-align: center;
   font-family: var(--mono);
   font-size: 12px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: var(--ink-2);
 }
-.fullscreen-msg.error { color: var(--bad); }
-.fullscreen-msg code { color: var(--ink-2); font-size: 11px; }
+.status-screen.error .status-title { color: var(--bad); }
+.status-screen code, .stage-overlay code {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.status-btn {
+  appearance: none;
+  padding: 8px 16px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: var(--bg-3);
+  color: var(--ink-0);
+  font-family: var(--sans);
+  font-size: 12px;
+  cursor: pointer;
+}
+.status-btn:hover { border-color: var(--accent); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }

@@ -4,21 +4,29 @@ import { FitIcon, FollowIcon, MinusIcon, PlusIcon } from './icons/UiIcons.jsx';
 
 const MAX_DPR = 2;
 
-// Canvas host. Owns one long-lived animation loop that reads the latest props
-// through a ref, so React re-renders never restart it.
-export function Stage({ segment, rows, stepRef, settings, fpsRef, onZoom, onZoomReset, onToggleFollow }) {
+/**
+ * Canvas host. Owns one long-lived animation loop that reads the latest props
+ * through a ref, so React re-renders never restart it. The loop does no work
+ * while `active` is false (hidden tab / iframe scrolled away), and while paused
+ * it redraws only when something visible changed.
+ */
+export function Stage({
+  segment, rows, error, onRetry, stepRef, settings, paused, active, fpsRef, onZoom, onZoomReset, onToggleFollow,
+}) {
   const hostRef = useRef(null);
   const canvasRef = useRef(null);
   const propsRef = useRef(null);
-  propsRef.current = { segment, rows, settings };
+  propsRef.current = { segment, rows, settings, paused, active };
 
   useEffect(() => {
     const host = hostRef.current;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    if (!ctx) return undefined;
     const camera = createCamera();
     const size = { w: 0, h: 0 };
-    let lastSegment = null;
+    let last = null; // inputs of the last drawn frame
+    let settled = false;
 
     const ro = new ResizeObserver(([entry]) => {
       size.w = Math.max(1, Math.floor(entry.contentRect.width));
@@ -32,15 +40,29 @@ export function Stage({ segment, rows, stepRef, settings, fpsRef, onZoom, onZoom
 
     const loop = (now) => {
       raf = requestAnimationFrame(loop);
+      const p = propsRef.current;
+      if (!p.active || !size.w) {
+        fpsRef.current = 0;
+        return;
+      }
+
+      const step = stepRef.current;
+      const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+      const unchanged = last
+        && last.step === step && last.rows === p.rows && last.settings === p.settings
+        && last.w === size.w && last.h === size.h && last.dpr === dpr;
+      if (p.paused && unchanged && settled) {
+        fpsRef.current = 0;
+        return;
+      }
+
       frames++;
       if (now - fpsSince >= 500) {
         fpsRef.current = Math.round((frames * 1000) / (now - fpsSince));
         frames = 0;
         fpsSince = now;
       }
-      if (!size.w) return;
 
-      const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
       const tw = Math.round(size.w * dpr);
       const th = Math.round(size.h * dpr);
       if (canvas.width !== tw || canvas.height !== th) {
@@ -49,25 +71,23 @@ export function Stage({ segment, rows, stepRef, settings, fpsRef, onZoom, onZoom
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      const p = propsRef.current;
-      if (p.segment !== lastSegment) {
-        camera.pos = null; // snap to the new segment instead of gliding across the world
-        lastSegment = p.segment;
-      }
+      if (last?.segment !== p.segment) camera.pos = null; // snap, don't glide across the world
       try {
-        renderFrame(ctx, {
+        ({ settled } = renderFrame(ctx, {
           width: size.w,
           height: size.h,
           segment: p.segment,
           rows: p.rows,
-          step: stepRef.current,
+          step,
           settings: p.settings,
           camera,
           now,
-        });
+        }));
       } catch (err) {
+        settled = true;
         console.error('[stage] render failed', err);
       }
+      last = { step, rows: p.rows, settings: p.settings, segment: p.segment, w: size.w, h: size.h, dpr };
     };
     raf = requestAnimationFrame(loop);
 
@@ -79,10 +99,10 @@ export function Stage({ segment, rows, stepRef, settings, fpsRef, onZoom, onZoom
 
   return (
     <main className="stage" ref={hostRef}>
-      <canvas ref={canvasRef} className="stage-canvas" aria-label="3D view of the tracked trajectory" />
+      <canvas ref={canvasRef} className="stage-canvas" role="img" aria-label="3D view of the tracked trajectory" />
 
       <div className="stage-legend" aria-hidden="true">
-        <span><i className="sw truth" />Ground truth</span>
+        <span><i className="sw truth" />Truth</span>
         {settings.showEstimate && <span><i className="sw estimate" />Estimate</span>}
         {(settings.showPred || settings.showFuture) && <span><i className="sw prediction" />Prediction</span>}
       </div>
@@ -104,8 +124,14 @@ export function Stage({ segment, rows, stepRef, settings, fpsRef, onZoom, onZoom
         </button>
       </div>
 
-      {!rows && (
-        <div className="stage-loading"><div className="spinner" />Loading segment…</div>
+      {error ? (
+        <div className="stage-overlay error" role="alert">
+          <div>Couldn't load this segment.</div>
+          <code>{String(error.message || error)}</code>
+          <button type="button" className="status-btn" onClick={onRetry}>Try again</button>
+        </div>
+      ) : !rows && (
+        <div className="stage-overlay"><div className="spinner" />Loading segment…</div>
       )}
     </main>
   );

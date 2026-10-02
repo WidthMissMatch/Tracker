@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { OPTIONS } from '../config.js';
 
 export const DEFAULT_SETTINGS = {
   zoom: 1,
@@ -23,48 +24,68 @@ export const LIMITS = {
 
 const STORAGE_KEY = 'raso.settings.v1';
 
+// Embedded copies don't persist: one host page shouldn't change what another
+// host (or the standalone site) opens with. Storage can also be unavailable
+// (sandboxed iframe, private mode), so every access is guarded.
+const PERSIST = !OPTIONS.framed;
+
 function clamp(key, value) {
   const range = LIMITS[key];
   return range ? Math.max(range[0], Math.min(range[1], value)) : value;
 }
 
-function load() {
+function readStored() {
+  if (!PERSIST) return {};
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    const merged = { ...DEFAULT_SETTINGS };
-    for (const k of Object.keys(DEFAULT_SETTINGS)) {
-      if (typeof saved[k] === typeof DEFAULT_SETTINGS[k]) merged[k] = clamp(k, saved[k]);
-    }
-    return merged;
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {};
   } catch {
-    return { ...DEFAULT_SETTINGS };
+    return {};
   }
 }
 
-// View settings, remembered per browser.
+function writeStored(settings) {
+  if (!PERSIST) return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  } catch {
+    // Storage unavailable or full — settings just won't persist.
+  }
+}
+
+// defaults < saved settings < URL options
+function initialSettings() {
+  const saved = readStored();
+  const fromUrl = {
+    zoom: OPTIONS.zoom,
+    speed: OPTIONS.speed,
+    follow: OPTIONS.follow,
+    showHUD: OPTIONS.hud,
+  };
+  const merged = { ...DEFAULT_SETTINGS };
+  for (const [k, def] of Object.entries(DEFAULT_SETTINGS)) {
+    for (const v of [saved[k], fromUrl[k]]) {
+      if (typeof v === typeof def && (typeof v !== 'number' || Number.isFinite(v))) merged[k] = clamp(k, v);
+    }
+  }
+  return merged;
+}
+
+// View settings, remembered per browser on the standalone site.
 export function useSettings() {
-  const [settings, setSettings] = useState(load);
+  const [settings, setSettings] = useState(initialSettings);
 
   const set = useCallback((key, value) => {
     setSettings((prev) => {
       const v = typeof value === 'function' ? value(prev[key]) : value;
       const next = { ...prev, [key]: clamp(key, v) };
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // Storage unavailable (private mode) — settings just won't persist.
-      }
+      writeStored(next);
       return next;
     });
   }, []);
 
   const reset = useCallback(() => {
     setSettings({ ...DEFAULT_SETTINGS });
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      // ignore
-    }
+    writeStored(DEFAULT_SETTINGS);
   }, []);
 
   return [settings, set, reset];

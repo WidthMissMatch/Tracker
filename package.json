@@ -1,7 +1,7 @@
 {
   "name": "raso-imm-tracker",
   "private": true,
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Replay viewer for an IMM radar tracker — ground truth vs estimate, error metrics and model probabilities.",
   "type": "module",
   "scripts": {

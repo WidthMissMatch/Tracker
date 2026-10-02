@@ -9,10 +9,11 @@ const STEP_MS = 150;
  * sample shown in the panels and only changes when a new sample is reached.
  * At the end of a segment playback moves on to the next one. The active
  * segment index is owned by the caller (the dataset loader needs it too).
+ * The clock only runs while `active` (page visible, stage on screen).
  */
-export function usePlayback({ segIdx, setSegIdx, segmentCount, rowCount, speed }) {
+export function usePlayback({ segIdx, setSegIdx, segmentCount, rowCount, speed, active = true, autoplay = true }) {
   const [stepIdx, setStepIdx] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const [paused, setPaused] = useState(!autoplay);
   const stepRef = useRef(0);
 
   const seek = useCallback((step) => {
@@ -33,7 +34,7 @@ export function usePlayback({ segIdx, setSegIdx, segmentCount, rowCount, speed }
   }, [rowCount, seek]);
 
   useEffect(() => {
-    if (paused || !rowCount) return;
+    if (paused || !active || !rowCount) return;
     const stepsPerMs = speed / STEP_MS;
     let raf = 0;
     let last = performance.now();
@@ -52,7 +53,7 @@ export function usePlayback({ segIdx, setSegIdx, segmentCount, rowCount, speed }
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [paused, rowCount, speed, segIdx, selectSegment]);
+  }, [paused, active, rowCount, speed, segIdx, selectSegment]);
 
   return {
     stepIdx,

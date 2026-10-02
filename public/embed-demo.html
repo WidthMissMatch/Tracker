@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>Embedding the IMM console</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <style>
+    :root {
+      --bg: #06080d; --panel: #0b0f17; --line: #263044;
+      --ink: #e8edf5; --ink-2: #8f9bb0; --accent: #6df2ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 32px 16px 64px;
+      background: var(--bg); color: var(--ink-2);
+      font: 15px/1.6 system-ui, -apple-system, 'Segoe UI', sans-serif;
+    }
+    main { max-width: 1100px; margin: 0 auto; }
+    h1 { color: var(--ink); font-size: 24px; margin: 0 0 8px; }
+    h2 { color: var(--ink); font-size: 17px; margin: 40px 0 8px; }
+    p { max-width: 72ch; margin: 0 0 12px; }
+    code, pre { font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+    code { color: var(--ink); }
+    pre {
+      margin: 12px 0; padding: 14px 16px; overflow-x: auto;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 8px; color: var(--ink);
+    }
+    a { color: var(--accent); }
+    table { border-collapse: collapse; width: 100%; max-width: 760px; margin: 8px 0; }
+    th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--ink); font-weight: 600; }
+    iframe { display: block; width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+    .full { height: 680px; }
+    .compact { height: 420px; }
+    .phone { width: 390px; max-width: 100%; height: 760px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Embedding the IMM console</h1>
+  <p>
+    The console runs inside a sandboxed <code>&lt;iframe&gt;</code>. It needs only
+    <code>allow-scripts</code>. Everything below is a live embed on this page.
+  </p>
+
+<pre>&lt;iframe
+  src="https://widthmissmatch.github.io/Tracker/?seg=3"
+  sandbox="allow-scripts"
+  title="IMM radar tracker replay"
+  loading="lazy"
+  style="width:100%; height:640px; border:0"&gt;&lt;/iframe&gt;</pre>
+
+  <h2>Options</h2>
+  <table>
+    <tr><th>Parameter</th><th>Effect</th></tr>
+    <tr><td><code>seg=0…8</code></td><td>Segment to open (default 3, F1 Monaco)</td></tr>
+    <tr><td><code>autoplay=0</code></td><td>Open paused</td></tr>
+    <tr><td><code>speed=2</code></td><td>Playback speed (0.1–20)</td></tr>
+    <tr><td><code>zoom=1.5</code></td><td>Initial zoom (0.15–8)</td></tr>
+    <tr><td><code>follow=0</code></td><td>Fixed camera instead of following the target</td></tr>
+    <tr><td><code>hud=0</code></td><td>Hide the target box and footer</td></tr>
+    <tr><td><code>panels=0</code></td><td>Stage and playback bar only</td></tr>
+    <tr><td><code>embed=1</code></td><td>Force embedded behaviour (normally detected)</td></tr>
+  </table>
+
+  <h2>Sandbox notes</h2>
+  <p>
+    With <code>allow-scripts</code> alone the page is fully functional. It runs
+    on an opaque origin, fetches its data cross-origin (GitHub Pages sends
+    <code>Access-Control-Allow-Origin: *</code>) and keeps no state. Adding
+    <code>allow-same-origin</code> enables its offline cache. Embedded copies
+    never save settings and hide the GitHub link, because popups are usually blocked.
+    Playback pauses while the frame is scrolled out of view.
+  </p>
+
+  <h2>Full layout</h2>
+  <iframe class="full" src="./?seg=3" sandbox="allow-scripts" title="IMM console, full layout" loading="lazy"></iframe>
+
+  <h2>Stage only: <code>panels=0</code></h2>
+  <iframe class="compact" src="./?seg=6&amp;panels=0&amp;speed=2" sandbox="allow-scripts" title="IMM console, stage only" loading="lazy"></iframe>
+
+  <h2>Phone width</h2>
+  <iframe class="phone" src="./?seg=4" sandbox="allow-scripts" title="IMM console at phone width" loading="lazy"></iframe>
+</main>
+</body>
+</html>
