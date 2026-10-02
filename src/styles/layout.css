@@ -167,7 +167,7 @@
 .seg-meta { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .seg-meta .name { font-size: 12px; font-weight: 500; color: var(--ink-0); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .seg-meta .sub { font-family: var(--mono); font-size: 9px; color: var(--ink-3); letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sparkline { display: block; }
+.sparkline { display: block; width: 56px; height: 16px; }
 
 /* ── Layout variants ───────────────────────────────────────────────────────
    Breakpoints follow the viewport, which inside an iframe is the iframe, so
@@ -181,8 +181,10 @@
    ──────────────────────────────────────────────────────────────────────── */
 
 @media (max-width: 1280px) {
-  .app { grid-template-columns: 220px minmax(0, 1fr) 272px; }
+  .app { grid-template-columns: 228px minmax(0, 1fr) 272px; }
   .tb-stat { padding: 0 10px; }
+  .sparkline { width: 40px; }
+  .seg-item { gap: 8px; }
 }
 
 @media (max-width: 1024px) {
@@ -247,6 +249,12 @@
   }
   .tb-stat:nth-child(6) { display: none; }
   .tb-stat .val { font-size: 12px; }
+  .sparkline { width: 64px; }
+}
+
+/* Narrow phones: keep the header on one line (play/pause already shows state). */
+@media (max-width: 420px) {
+  .status-pill { display: none; }
 }
 
 /* Stage + transport only (?panels=0) — always a fixed, non-scrolling frame. */

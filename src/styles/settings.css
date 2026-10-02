@@ -135,3 +135,13 @@ kbd {
 .reset-btn:hover { background: var(--bg-3); color: var(--ink-0); }
 
 .about { margin: 18px 0 0; font-size: 11px; line-height: 1.55; color: var(--ink-3); }
+
+/* Touch: full-size targets in the drawer. */
+@media (pointer: coarse) {
+  .segmented button { min-height: 36px; }
+  .set-row { min-height: 44px; }
+  .switch { width: 40px; height: 24px; }
+  .switch::after { width: 20px; height: 20px; }
+  .switch:checked::after { transform: translateX(16px); }
+  input[type='range'] { height: 28px; }
+}

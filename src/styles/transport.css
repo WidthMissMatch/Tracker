@@ -101,6 +101,20 @@
   .timeline { height: 42px; }
   .tbtn.primary { width: 38px; height: 38px; }
 }
+/* Tablets, phones (both orientations): swipeable timeline with readable chips. */
+@media (max-width: 1024px) {
+  .timeline {
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .timeline::-webkit-scrollbar { display: none; }
+  .tl-seg { flex: 0 0 auto !important; min-width: 96px; scroll-snap-align: start; }
+}
+@media (pointer: coarse) {
+  .speed-stepper button { width: 36px; }
+}
 @media (max-width: 720px) {
   .transport {
     grid-template-columns: minmax(0, 1fr);
@@ -111,13 +125,4 @@
   .tbtn { width: 40px; height: 40px; }
   .tbtn.primary { width: 46px; height: 46px; }
   .speed-stepper { height: 40px; }
-  .speed-stepper button { width: 36px; }
-  .timeline {
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-  .timeline::-webkit-scrollbar { display: none; }
-  .tl-seg { flex: 0 0 auto !important; min-width: 92px; scroll-snap-align: start; }
 }
