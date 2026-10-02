@@ -1,0 +1,136 @@
+/* Right-hand inspector: filter state readouts. */
+.inspector {
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--bg-1);
+  border-left: 1px solid var(--line-0);
+}
+.section { padding: 14px; border-bottom: 1px solid var(--line-0); }
+.sttl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.sttl .tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--ink-3);
+  padding: 2px 6px;
+  border: 1px solid var(--line-1);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Position */
+.kv-grid {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 6px 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.kv-grid .k { color: var(--ink-3); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; padding-top: 2px; }
+.kv-grid .v { color: var(--ink-0); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kv-grid .v .ax { color: var(--ink-3); margin-right: 3px; }
+.kv-grid .v.truth { color: var(--truth); }
+.kv-grid .v.estimate { color: var(--estimate); }
+.kv-grid .v.prediction { color: var(--prediction); }
+
+/* Error */
+.err-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px; }
+.err-row .big { font-family: var(--mono); font-size: 26px; font-weight: 500; color: var(--ink-0); line-height: 1; font-variant-numeric: tabular-nums; }
+.err-row .unit { font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
+.err-row .delta { margin-left: auto; padding: 2px 6px; border-radius: 4px; font-family: var(--mono); font-size: 10px; }
+.err-row .delta.up { color: var(--bad); background: rgba(255, 104, 104, 0.1); }
+.err-row .delta.dn { color: var(--good); background: rgba(123, 227, 154, 0.1); }
+.error-chart { display: block; width: 100%; height: 56px; }
+.chart-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--ink-3);
+}
+.chart-caption .dash {
+  display: inline-block;
+  width: 10px;
+  margin-right: 4px;
+  vertical-align: middle;
+  border-top: 1px dashed var(--warn);
+}
+.err-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+.err-stat { padding: 8px; background: var(--bg-2); border: 1px solid var(--line-0); border-radius: 6px; }
+.err-stat .l { font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+.err-stat .v { margin-top: 4px; font-family: var(--mono); font-size: 13px; color: var(--ink-0); font-variant-numeric: tabular-nums; }
+
+/* Mode probability */
+.modeprob-chart { display: block; width: 100%; height: 72px; border-radius: 4px; background: var(--bg-2); }
+.modeprob-legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 16px; margin-top: 10px; font-family: var(--mono); font-size: 10px; }
+.modeprob-legend .it { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.modeprob-legend .sw { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.modeprob-legend .pct { margin-left: auto; color: var(--ink-0); font-variant-numeric: tabular-nums; }
+
+/* IMM bank */
+.bank-row { display: flex; gap: 6px; }
+.bank-dot {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  height: 32px;
+  border-radius: 6px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-1);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  transition: all 0.18s;
+}
+.bank-dot.active {
+  color: var(--violet);
+  border-color: var(--violet);
+  background: rgba(181, 140, 255, 0.12);
+  box-shadow: inset 0 0 12px rgba(181, 140, 255, 0.12);
+}
+
+/* RF classifier */
+.rf-class { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.rf-name { font-size: 15px; font-weight: 600; }
+.rf-truth { font-family: var(--mono); font-size: 10px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conf-bar {
+  position: relative;
+  height: 24px;
+  overflow: hidden;
+  background: var(--bg-2);
+  border: 1px solid var(--line-1);
+  border-radius: 6px;
+}
+.conf-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, rgba(123, 227, 154, 0.55), rgba(109, 242, 255, 0.7));
+  transition: width 0.18s;
+}
+.conf-marks i { position: absolute; top: 0; bottom: 0; border-left: 1px dashed rgba(255, 255, 255, 0.25); }
+.conf-bar .lbl {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-0);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  font-variant-numeric: tabular-nums;
+}
